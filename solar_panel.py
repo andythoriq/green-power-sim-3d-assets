@@ -75,6 +75,34 @@ def finalize():
     frame_viewport()
 
 
+def create_chamfered_square(name, width, chamfer, depth, location):
+    mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+    
+    w = width / 2
+    c = chamfer
+    
+    verts = [
+        (w, w-c, depth/2), (w-c, w, depth/2), (-w+c, w, depth/2), (-w, w-c, depth/2),
+        (-w, -w+c, depth/2), (-w+c, -w, depth/2), (w-c, -w, depth/2), (w, -w+c, depth/2),
+        (w, w-c, -depth/2), (w-c, w, -depth/2), (-w+c, w, -depth/2), (-w, w-c, -depth/2),
+        (-w, -w+c, -depth/2), (-w+c, -w, -depth/2), (w-c, -w, -depth/2), (w, -w+c, -depth/2),
+    ]
+    
+    faces = [
+        (0, 1, 2, 3, 4, 5, 6, 7),
+        (15, 14, 13, 12, 11, 10, 9, 8),
+        (0, 8, 9, 1), (1, 9, 10, 2), (2, 10, 11, 3), (3, 11, 12, 4),
+        (4, 12, 13, 5), (5, 13, 14, 6), (6, 14, 15, 7), (7, 15, 8, 0)
+    ]
+    
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    return obj
+
+
 # ══════════════════════════════════════════════════════════════
 #  SOLAR PANEL
 # ══════════════════════════════════════════════════════════════
@@ -112,23 +140,41 @@ def create_solar_panel():
     bracket.name = "SolarPanel_Bracket"
     parent_to(bracket, group)
 
+    # ── Panel Head (Rotates the frame and panels) ──
+    head = create_group_empty("SolarPanel_Head", (0, 0, pivot_z + 0.042))
+    head.empty_display_size = 0.15
+    parent_to(head, group)
+
     # ── Panel Frame (outer rim of the panel) ──
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, pivot_z + 0.042))
     frame = bpy.context.object
-    frame.scale = (0.65, 0.55, 0.025)
-    frame.rotation_euler = (math.radians(30), 0, 0)
+    frame.scale = (0.70, 0.70, 0.025)
     frame.name = "SolarPanel_Frame"
-    parent_to(frame, group)
+    parent_to(frame, head)
 
-    # ── Panel Surface (the dark photovoltaic face — inset) ──
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, pivot_z + 0.042))
-    surface = bpy.context.object
-    surface.scale = (0.60, 0.50, 0.03)
-    surface.rotation_euler = (math.radians(30), 0, 0)
-    # Slight offset above frame to prevent z-fighting
-    surface.location.z += 0.015
-    surface.name = "SolarPanel_Surface"
-    parent_to(surface, group)
+    # ── 4 Panel Surfaces (Chamfered Squares) ──
+    panel_width = 0.30
+    chamfer_size = 0.04
+    offset = 0.17
+    positions = [
+        (-offset, -offset),
+        (offset, -offset),
+        (-offset, offset),
+        (offset, offset)
+    ]
+    for i, (dx, dy) in enumerate(positions):
+        # Membentuk persegi dengan sudut terpotong (octagon tak beraturan)
+        surface = create_chamfered_square(
+            name=f"SolarPanel_Surface_{i+1}", 
+            width=panel_width, 
+            chamfer=chamfer_size, 
+            depth=0.03, 
+            location=(dx, dy, pivot_z + 0.042 + 0.01)
+        )
+        parent_to(surface, head)
+
+    # Miringkan seluruh frame dan panel
+    head.rotation_euler = (math.radians(30), 0, 0)
 
     return group
 

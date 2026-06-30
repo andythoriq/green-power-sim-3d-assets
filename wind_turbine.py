@@ -119,16 +119,29 @@ def create_wind_turbine():
     nacelle.name = "WindTurbine_Nacelle"
     parent_to(nacelle, group)
 
-    # ── Hub (Bola Pusat Rotasi) ──
+    # ── Hub (Piringan Pusat Rotasi) ──
     hub_pos = (0, 0.18, hub_z)
-    bpy.ops.mesh.primitive_ico_sphere_add(
-        subdivisions=2, radius=0.10,
-        location=hub_pos
+    
+    # Piringan pertama
+    bpy.ops.mesh.primitive_cylinder_add(
+        radius=0.10, depth=0.04,
+        location=hub_pos,
+        rotation=(math.radians(90), 0, 0)
     )
     hub = bpy.context.object
     hub.name = "WindTurbine_Hub"
-    # Origin set to center of the hub sphere (already at hub_pos by default)
     parent_to(hub, group)
+    
+    # Piringan kedua
+    bpy.ops.mesh.primitive_cylinder_add(
+        radius=0.06, depth=0.02,
+        location=(0, 0.18 + 0.03, hub_z),
+        rotation=(math.radians(90), 0, 0)
+    )
+    hub_front = bpy.context.object
+    hub_front.name = "WindTurbine_Hub_Front"
+    set_origin_to_point(hub_front, hub_pos)
+    parent_to(hub_front, group)
 
     # ── 3 Blades (Baling-baling) ──
     blade_len = 0.75
@@ -144,12 +157,12 @@ def create_wind_turbine():
 
         blade.location.z += (blade_len / 2) - 0.08
 
-        # Mengembalikan titik pusat rotasi (Origin) tepat ke tengah bola hub
+        # Mengembalikan titik pusat rotasi (Origin) tepat ke tengah hub
         set_origin_to_point(blade, hub_pos)
 
-        # Rotasi Z (math.radians(15)) memberikan kemiringan sudut agar realistis membelah angin.
+        # Rotasi Z dihilangkan agar baling-baling lurus.
         # Rotasi Y (-angle) mendistribusikan ke-3 baling dalam bentuk segitiga sama sisi.
-        blade.rotation_euler = (0, -angle, math.radians(15))
+        blade.rotation_euler = (0, -angle, 0)
 
         blade.name = f"WindTurbine_Blade_{i+1}"
         parent_to(blade, group)

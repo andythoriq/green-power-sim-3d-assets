@@ -98,19 +98,27 @@ def create_water_wheel():
     n_spokes = 8
 
     # --- 1. STATIC FRAME (Tiang Penyangga Kiri & Kanan) ---
-    pillar_h = 0.7
+    pillar_h = 0.64
     for side, tag in [(-1, 'L'), (1, 'R')]:
         y_pos = side * (wheel_w / 2 + 0.15)
 
+        # Tiang utama bawah
         bpy.ops.mesh.primitive_cube_add(size=1, location=(0, y_pos, pillar_h / 2))
         pillar = bpy.context.object
         pillar.scale = (0.08, 0.08, pillar_h)
         pillar.name = f"WaterWheel_Support_{tag}"
         parent_to(pillar, group)
 
+        # Kotak persegi penghubung axle dan tiang
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, y_pos, 0.7))
+        connector = bpy.context.object
+        connector.scale = (0.12, 0.08, 0.12)
+        connector.name = f"WaterWheel_Connector_{tag}"
+        parent_to(connector, group)
+
     # --- 2. ROTATING WHEEL (Kincir Berputar) ---
     # Poros Tengah (Axle)
-    axle_len = wheel_w + 0.5
+    axle_len = (wheel_w / 2 + 0.15) * 2 - 0.08
     bpy.ops.mesh.primitive_cylinder_add(
         vertices=12, radius=0.06, depth=axle_len,
         location=wheel_center
